@@ -43,6 +43,9 @@ module glissade_grid_operators
     use glide_types
     use cism_parallel, only: this_rank, main_task, nhalo, &
          parallel_type, parallel_halo, parallel_reduce_sum, parallel_globalindex
+  ! Note: Using the glide_diagnostics module creates a circularity.
+  !       For that reason, point_diag should be called from a higher level, not from inside this module.
+!!    use glide_diagnostics, only: point_diag
 
     implicit none
 
@@ -458,30 +461,6 @@ contains
        enddo  ! i
     enddo     ! j
 
-    if (verbose_gradient .and. main_task) then
-       print*, ' '
-       print*, 'Centered gradient:'
-       print*, ' '
-       print*, 'df_dx:'
-       do j = ny-1, 1, -1
-!!          do i = 1, nx-1
-          do i = 1, nx/2
-             write(6,'(f9.6)',advance='no') df_dx(i,j)
-          enddo
-          print*, ' '
-       enddo
-
-       print*, ' '
-       print*, 'df_dy:'
-       do j = ny-1, 1, -1
-!!          do i = 1, nx-1
-          do i = 1, nx/2
-             write(6,'(f9.6)',advance='no') df_dy(i,j)
-          enddo
-          print*, ' '
-       enddo
-    endif
-
   end subroutine glissade_gradient
 
 !****************************************************************************
@@ -685,27 +664,6 @@ contains
        enddo
 
     endif  ! present(max_slope)
-
-    if (verbose_gradient .and. main_task) then
-       print*, ' '
-       print*, 'Edge gradient:'
-       print*, ' '
-       print*, 'df_dx:'
-       do j = ny-1, 1, -1
-          do i = 1, nx
-             write(6,'(f8.4)',advance='no') df_dx(i,j)
-          enddo
-          print*, ' '
-       enddo
-       print*, ' '
-       print*, 'df_dy:'
-       do j = ny, 1, -1
-          do i = 1, nx-1
-             write(6,'(f8.4)',advance='no') df_dy(i,j)
-          enddo
-          print*, ' '
-       enddo
-    endif
 
   end subroutine glissade_gradient_at_edges
 
@@ -1251,47 +1209,6 @@ contains
        enddo
 
     endif   ! present(max_slope)
-
-    if (verbose_gradient .and. this_rank==rtest) then
-       print*, ' '
-       print*, 'Hybrid gradient, i, j, task =', itest, jtest, rtest
-       print*, ' '
-       print*, 'ds_dx_edge:'
-       do j = jtest+3, jtest-3, -1
-          write(6,'(i6)',advance='no') j
-          do i = itest-3, itest+3
-             write(6,'(f9.6)',advance='no') ds_dx_edge(i,j)
-          enddo
-          print*, ' '
-       enddo
-       print*, ' '
-       print*, 'ds_dy_edge:'
-       do j = jtest+3, jtest-3, -1
-          write(6,'(i6)',advance='no') j
-          do i = itest-3, itest+3
-             write(6,'(f9.6)',advance='no') ds_dy_edge(i,j)
-          enddo
-          print*, ' '
-       enddo
-       print*, ' '
-       print*, 'ds_dx:'
-       do j = jtest+3, jtest-3, -1
-          write(6,'(i6)',advance='no') j
-          do i = itest-3, itest+3
-             write(6,'(f9.6)',advance='no') ds_dx(i,j)
-          enddo
-          print*, ' '
-       enddo
-       print*, ' '
-       print*, 'ds_dy:'
-       do j = jtest+3, jtest-3, -1
-          write(6,'(i6)',advance='no') j
-          do i = itest-3, itest+3
-             write(6,'(f9.6)',advance='no') ds_dy(i,j)
-          enddo
-          print*, ' '
-       enddo
-    endif
 
     ! Note: Halo updates moved to higher level
 !    call staggered_parallel_halo(ds_dx)
@@ -2135,18 +2052,8 @@ contains
 
     do iter = 1, max_iter
 
-       if (present(rtest)) then
-          if (verbose_extrapolate .and. this_rank == rtest) then
-             print*, ' '
-             print*, 'glissade_scalar_extrapolate, iteration =', iter
-             print*, 'Current phi_out (m):'
-             do j = jtest+3, jtest-3, -1
-                do i = itest-3, itest+3
-                   write(6,'(f10.3)',advance='no') phi_out(i,j)
-                enddo
-                write(6,*) ' '
-             enddo
-          endif
+       if (verbose_extrapolate) then
+          if (this_rank == rtest) write(6,*) 'glissade_scalar_extrapolate, iteration =', iter
        endif
 
        ! Make a copy of the current output field
