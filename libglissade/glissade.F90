@@ -4082,8 +4082,10 @@ contains
     call glissade_stagger(ewn,                 nsn,  &
                           model%geometry%thck, model%geomderv%stagthck)
 
+
     call glissade_gradient(ewn,                     nsn,       &
                            model%numerics%dew,      model%numerics%dns,      &
+                           itest, jtest, rtest,                              &
                            model%geometry%usrf,                              &
                            model%geomderv%dusrfdew, model%geomderv%dusrfdns)
 

@@ -1304,10 +1304,11 @@ module glissade_bmlt_float
        ! Note: The slope is currently used only for the nonlocal-slope scheme.
 
        call glissade_slope_angle(&
-            nx,       ny,     &
-            dew,      dns,    &  ! m
-            lsrf,             &  ! m
-            theta_slope,      &  ! radians
+            nx,           ny,    &
+            dew,          dns,   &  ! m
+            itest, jtest, rtest, &
+            lsrf,                &  ! m
+            theta_slope,         &  ! radians
             slope_mask_in = ice_mask)
 
        call parallel_halo(theta_slope, parallel)
@@ -2017,43 +2018,7 @@ module glissade_bmlt_float
              endif   ! marine_connection_mask
           enddo   ! i
        enddo  ! j
-  
-       call parallel_halo(thermal_forcing, parallel)
-
-       call parallel_boundary_value(thermal_forcing, unphys_val, parallel)
-
-       if (iter_down == 1 .or. iter_down == 2 .or. iter_down == 5 .or. mod(iter_down, 10) == 0) then
-          local_count = 0
-          do j = 1+nhalo, ny-nhalo
-          do i = 1+nhalo,  nx-nhalo !Michele try to do extrapolation on floating cells only
-                if (marine_connection_mask(i,j) == 1) then   ! there is a marine path to the ocean
-                   do k = ktop(i,j), kbot(i,j)
-                      if (thermal_forcing(k,i,j) /= unphys_val) local_count = local_count + 1
-                   enddo
-                endif
-             enddo
-          enddo
-
-          global_count_down = parallel_reduce_sum(local_count)
-
-          if (global_count_down == global_count_down_save) then
-             !if (verbose_bmlt_float .and. this_rank == rtest) &
-             write(message,*) 'Downward extrapolation converged: iter, global_count =', &
-                  iter_down, global_count_down
-                  call write_log(message)
-             exit
-          else
-             !if (verbose_bmlt_float .and. this_rank == rtest) &
-             write(message,*) 'Downward extrapolation convergence check: iter, global_count =', &
-                  iter_down, global_count_down
-                  call write_log(message)
-             global_count_down_save = global_count_down
-          endif
-
-       endif   ! time for a convergence check
-
-       end do !Downward extrapolation iteration
-       
+         
        ! Extend TF upward in columns that contain unfilled cells above filled cells.
 
        do j = 1+nhalo, ny-nhalo
