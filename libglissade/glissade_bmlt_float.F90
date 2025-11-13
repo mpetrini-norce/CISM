@@ -1051,7 +1051,6 @@ module glissade_bmlt_float
             topg,                              &  ! m
             thermal_forcing_mask,              &
             marine_connection_mask,            &
-            ice_mask, ocean_mask, f_ground_cell, & !
             unphys_val,                        &  ! identifies unfilled cells on input
             unphys_val,                       &  ! default value given to unfilled cells on output
             ocean_data%thermal_forcing)
@@ -1503,7 +1502,6 @@ module glissade_bmlt_float
        lsrf,            topg,                  &
        thermal_forcing_mask,                   &
        marine_connection_mask,                 &
-       ice_mask, ocean_mask, f_ground_cell,    &
        unphys_val,      default_val,           &
        thermal_forcing)
 
@@ -1545,13 +1543,11 @@ module glissade_bmlt_float
     !TODO - Pass in eus as well as topg?
     real(dp), dimension(nx,ny), intent(in) ::  &
          lsrf,                 & ! lower ice surface elevation (m)
-         topg,                 &    ! bed elevation (m)
-         f_ground_cell
+         topg                    ! bed elevation (m)
 
     integer, dimension(nx,ny), intent(in) ::  &
          thermal_forcing_mask, & ! = 1 where thermal forcing and bmlt_float are potentially nonzero, else = 0
-         marine_connection_mask, &  ! = 1 for cells with marine connection to the ocean, else = 0
-         ice_mask, ocean_mask       ! Note: marine_connection_mask includes paths through grounded marine-based cells
+         marine_connection_mask  ! = 1 for cells with marine connection to the ocean, else = 0
 
     real(dp), intent(in) :: &
          unphys_val,           & ! unphysical value given to cells/levels not yet filled
@@ -1613,7 +1609,7 @@ module glissade_bmlt_float
     integer, parameter :: &
          max_iter_finish = 10    ! max iterations for the short finishing stage
 
-    logical, parameter :: verbose_extrapolate = .true.  ! set to T to follow progress of each iteration
+    logical, parameter :: verbose_extrapolate = .false.  ! set to T to follow progress of each iteration
 
     ! For each marine-connected cell, compute the top and bottom layers where we need ocean data
     ! (either in the original input field, or extrapolated).
@@ -1667,26 +1663,6 @@ module glissade_bmlt_float
        call point_diag(ktop, 'ktop', itest, jtest, rtest, 7, 7)
        call point_diag(kbot, 'kbot', itest, jtest, rtest, 7, 7)
     endif
-
-    !Michele: I have realised that the remapped ocean is taking values where it shouldn't - points that are ice
-    !shelves in CISM and should not have ocean values - this could be the reason for weird patterns of remapped
-    !ocean fields. So the idea could be, before starting to counting unphys_val, to set to unphys val all points
-    !that are ice covered.
-    !
-    !WHL: For standalone CISM, I think we should do this only at startup.
-    !     For coupled CISM, we should do this only at the start of a coupling time step,
-    !       when there is new ocean data to extrapolate.
-    !     Otherwise, we will have to do many iterations on every time step, instead of just filling a few values
-    !       in newly floating cells.
-    !     For this reason, I moved the code below to the higher level, before this subroutine is called.
-
-!       do j = 1+nhalo, ny-nhalo
-!          do i = 1+nhalo,  nx-nhalo
-!             if (ice_mask(i,j) == 1 .or. ocean_mask(i,j) == 0) then
-!                thermal_forcing(:,i,j) = unphys_val
-!             end if
-!          end do
-!       end do
 
     ! Check that the stencil size is supported
     if (.not. (stencil_size==9 .or. stencil_size==25 .or. stencil_size==27)) then
