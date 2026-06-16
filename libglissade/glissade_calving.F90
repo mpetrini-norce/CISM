@@ -2968,8 +2968,8 @@ contains
              !tf_sr = 2.0 ! hard coding a cold cavity thermal forcing of 2 degC
              !q_sr = 10.0 ! hard coding a runoff of 400 m3/s multiplied by s/day and divided by cross-sectional area of 700m*5000m [m/day] 
 
-             tf_sr = thermal_forcing_applied(i,j) ! 2d thermal forcing [degC]
-             q_sr = runoff_applied(i,j) * 86400.  ! runoff_applied passed in m/s; for Rignot equation convert to [m/d] 
+             tf_sr = max(thermal_forcing_applied(i,j), 0._dp) ! 2d thermal forcing [degC]
+             q_sr  = max(runoff_applied(i,j) * 86400._dp, 0._dp)  ! runoff in [m/d], clamped >= 0
 
              ! Rignot et al. 2016; formulted in m/d, converted to m/s. Mulitplier frontal_melt_factor as proposed for ISMIP7
              m_sr = frontal_melt_factor * (3.0 * 1.0e-4 * thck_effective(i,j) * q_sr**0.39 + 0.15) * tf_sr**1.18 * 365./scyr 
