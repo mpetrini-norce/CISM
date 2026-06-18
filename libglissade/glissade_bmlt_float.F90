@@ -1822,7 +1822,7 @@ module glissade_bmlt_float
 
        do j = 1+nhalo, ny-nhalo
           do i = 1+nhalo, nx-nhalo
-             if (thermal_forcing_mask(i,j) == 1) then
+             if (thermal_forcing_mask(i,j) == 1 .and. ktop(i,j) >= 1) then
                 do k = ktop(i,j), kbot(i,j)
                    if (thermal_forcing(k,i,j) == unphys_val) then
                       call parallel_globalindex(i, j, iglobal, jglobal, parallel)
@@ -1892,7 +1892,7 @@ module glissade_bmlt_float
 
     do j = 1+nhalo, ny-nhalo
        do i = 1+nhalo, nx-nhalo
-          if (thermal_forcing_mask(i,j) == 1) then
+          if (thermal_forcing_mask(i,j) == 1 .and.  ktop(i,j) >= 1) then
              do k = ktop(i,j), kbot(i,j)
                 if (thermal_forcing(k,i,j) == unphys_val) then
                    call parallel_globalindex(i, j, iglobal, jglobal, parallel)
